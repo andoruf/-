@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IRON LOG</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --danger: #ef4444;
+      --input: #020617;
+      --border: #334155;
+    }
+
+    body.light {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --danger: #dc2626;
+      --input: #f8fafc;
+      --border: #cbd5e1;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+    }
+
+    .app {
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 8px 0 4px;
+      font-size: 32px;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin: 12px 0 6px;
+    }
+
+    select, input, button {
+      width: 100%;
+      font-size: 16px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 12px;
+    }
+
+    select, input {
+      background: var(--input);
+      color: var(--text);
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:active { transform: scale(.99); }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .set-row {
+      display: grid;
+      grid-template-columns: 58px 1fr 1fr;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .set-label {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .small-btn {
+      width: auto;
+      padding: 8px 12px;
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .danger { background: var(--danger); }
+
+    .muted { color: var(--muted); }
+
+    .history-item {
+      border-top: 1px solid var(--border);
+      padding: 12px 0;
+    }
+
+    .history-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .sets {
+      margin-top: 6px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .theme-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-box {
+      background: var(--input);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .stat-num {
+      font-size: 24px;
+      font-weight: 900;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>IRON LOG</h1>
+    <div class="subtitle">5セット簡単入力版</div>
+
+    <div class="card">
+      <div class="theme-buttons">
+        <button type="button" id="darkThemeBtn">ダーク</button>
+        <button type="button" id="lightThemeBtn">ライト</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <label for="exerciseSelect">種目</label>
+      <select id="exerciseSelect"></select>
+
+      <label for="newExerciseInput">新しい種目を追加</label>
+      <div class="row">
+        <input id="newExerciseInput" type="text" placeholder="例：ベンチプレス" />
+        <button type="button" id="addExerciseBtn">追加</button>
+      </div>
+
+      <label>セット入力</label>
+      <div id="setsContainer"></div>
+
+      <button type="button" id="saveBtn">保存</button>
+      <p id="message" class="muted"></p>
+    </div>
+
+    <div class="card">
+      <h2>統計</h2>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="muted">記録回数</div>
+          <div class="stat-num" id="totalWorkouts">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="muted">総セット数</div>
+          <div class="stat-num" id="totalSets">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="history-head">
+        <h2>履歴</h2>
+        <button type="button" class="small-btn danger" id="clearHistoryBtn">履歴削除</button>
+      </div>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+  <script>
+    const defaultExercises = ["ベンチプレス", "スクワット", "デッドリフト", "ショルダープレス", "ラットプルダウン"];
+
+    const exerciseSelect = document.getElementById("exerciseSelect");
+    const newExerciseInput = document.getElementById("newExerciseInput");
+    const addExerciseBtn = document.getElementById("addExerciseBtn");
+    const setsContainer = document.getElementById("setsContainer");
+    const saveBtn = document.getElementById("saveBtn");
+    const message = document.getElementById("message");
+    const historyList = document.getElementById("historyList");
+    const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+    const totalWorkouts = document.getElementById("totalWorkouts");
+    const totalSets = document.getElementById("totalSets");
+    const darkThemeBtn = document.getElementById("darkThemeBtn");
+    const lightThemeBtn = document.getElementById("lightThemeBtn");
+
+    let exercises = JSON.parse(localStorage.getItem("ironLogExercises")) || defaultExercises;
+    let records = JSON.parse(localStorage.getItem("ironLogRecords")) || [];
+
+    function saveExercises() {
+      localStorage.setItem("ironLogExercises", JSON.stringify(exercises));
+    }
+
+    function saveRecords() {
+      localStorage.setItem("ironLogRecords", JSON.stringify(records));
+    }
+
+    function renderExercises() {
+      exerciseSelect.innerHTML = "";
+      exercises.forEach(name => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        exerciseSelect.appendChild(option);
+      });
+    }
+
+    function renderSetInputs() {
+      setsContainer.innerHTML = "";
+      for (let i = 1; i <= 5; i++) {
+        const row = document.createElement("div");
+        row.className = "set-row";
+        row.innerHTML = `
+          <div class="set-label">${i}set</div>
+          <input type="number" inputmode="decimal" min="0" step="0.5" id="weight${i}" placeholder="重量 kg">
+          <input type="number" inputmode="numeric" min="0" step="1" id="reps${i}" placeholder="回数 reps">
+        `;
+        setsContainer.appendChild(row);
+      }
+    }
+
+    function addExercise() {
+      const name = newExerciseInput.value.trim();
+      if (!name) {
+        showMessage("種目名を入力してください");
+        return;
+      }
+
+      if (exercises.includes(name)) {
+        showMessage("すでに登録されています");
+        exerciseSelect.value = name;
+        newExerciseInput.value = "";
+        return;
+      }
+
+      exercises.push(name);
+      saveExercises();
+      renderExercises();
+      exerciseSelect.value = name;
+      newExerciseInput.value = "";
+      showMessage("種目を追加しました");
+    }
+
+    function saveWorkout() {
+      const exercise = exerciseSelect.value;
+      const sets = [];
+
+      for (let i = 1; i <= 5; i++) {
+        const weight = document.getElementById(`weight${i}`).value;
+        const reps = document.getElementById(`reps${i}`).value;
+
+        if (weight !== "" && reps !== "") {
+          sets.push({ weight: Number(weight), reps: Number(reps) });
+        }
+      }
+
+      if (sets.length === 0) {
+        showMessage("重量と回数を1セット以上入力してください");
+        return;
+      }
+
+      const record = {
+        id: Date.now(),
+        date: new Date().toLocaleString("ja-JP"),
+        exercise,
+        sets
+      };
+
+      records.unshift(record);
+      saveRecords();
+      clearSetInputs();
+      renderHistory();
+      renderStats();
+      showMessage("保存しました");
+    }
+
+    function clearSetInputs() {
+      for (let i = 1; i <= 5; i++) {
+        document.getElementById(`weight${i}`).value = "";
+        document.getElementById(`reps${i}`).value = "";
+      }
+    }
+
+    function deleteRecord(id) {
+      records = records.filter(record => record.id !== id);
+      saveRecords();
+      renderHistory();
+      renderStats();
+    }
+
+    function renderHistory() {
+      historyList.innerHTML = "";
+
+      if (records.length === 0) {
+        historyList.innerHTML = `<p class="muted">まだ記録がありません</p>`;
+        return;
+      }
+
+      records.forEach(record => {
+        const item = document.createElement("div");
+        item.className = "history-item";
+        const setsText = record.sets
+          .map((set, index) => `${index + 1}set：${set.weight}kg × ${set.reps}回`)
+          .join("<br>");
+
+        item.innerHTML = `
+          <div class="history-head">
+            <div>
+              <strong>${record.exercise}</strong><br>
+              <span class="muted">${record.date}</span>
+            </div>
+            <button type="button" class="small-btn danger" data-id="${record.id}">削除</button>
+          </div>
+          <div class="sets">${setsText}</div>
+        `;
+
+        item.querySelector("button").addEventListener("click", () => deleteRecord(record.id));
+        historyList.appendChild(item);
+      });
+    }
+
+    function renderStats() {
+      totalWorkouts.textContent = records.length;
+      totalSets.textContent = records.reduce((sum, record) => sum + record.sets.length, 0);
+    }
+
+    function clearHistory() {
+      if (!confirm("履歴をすべて削除しますか？")) return;
+      records = [];
+      saveRecords();
+      renderHistory();
+      renderStats();
+      showMessage("履歴を削除しました");
+    }
+
+    function setTheme(theme) {
+      if (theme === "light") {
+        document.body.classList.add("light");
+      } else {
+        document.body.classList.remove("light");
+      }
+      localStorage.setItem("ironLogTheme", theme);
+    }
+
+    function loadTheme() {
+      const theme = localStorage.getItem("ironLogTheme") || "dark";
+      setTheme(theme);
+    }
+
+    function showMessage(text) {
+      message.textContent = text;
+      setTimeout(() => {
+        message.textContent = "";
+      }, 2500);
+    }
+
+    addExerciseBtn.addEventListener("click", addExercise);
+    newExerciseInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") addExercise();
+    });
+    saveBtn.addEventListener("click", saveWorkout);
+    clearHistoryBtn.addEventListener("click", clearHistory);
+    darkThemeBtn.addEventListener("click", () => setTheme("dark"));
+    lightThemeBtn.addEventListener("click", () => setTheme("light"));
+
+    loadTheme();
+    renderExercises();
+    renderSetInputs();
+    renderHistory();
+    renderStats();
+  </script>
+</body>
+</html>
