@@ -92,6 +92,11 @@
       box-shadow: 0 1px 0 rgba(0,0,0,0.15);
     }
 
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .level-btn {
       background: #fff;
       color: #4a90a4;
@@ -194,12 +199,19 @@
       box-shadow: 0 5px 0 #e5b84d;
       cursor: pointer;
       text-transform: uppercase;
+      padding: 0;
+      font-family: inherit;
+      transition: opacity .2s, transform .2s;
     }
 
-    .letter.used {
-      opacity: .25;
+    .letter:hover:not(:disabled) {
+      transform: scale(1.05);
+    }
+
+    .letter:disabled {
+      opacity: 0.25;
       pointer-events: none;
-      transform: scale(.92);
+      transform: scale(0.92);
     }
 
     .message {
@@ -298,6 +310,17 @@
       to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
     }
 
+    .section-title {
+      text-align: center;
+      margin-top: 0;
+      color: #ff6fa3;
+    }
+
+    .section-subtitle {
+      text-align: center;
+      font-weight: 800;
+    }
+
     details summary {
       cursor: pointer;
       font-weight: 900;
@@ -357,23 +380,23 @@
       <div class="letter-bank" id="letterBank"></div>
 
       <div class="hint-row">
-        <button class="yellow small-btn" id="hintFirstBtn">1文字ヒント</button>
-        <button class="yellow small-btn" id="hintLengthBtn">文字数ヒント</button>
-        <button class="secondary small-btn" id="soundBtn">発音</button>
+        <button class="yellow small-btn" id="hintFirstBtn" aria-label="1文字ヒント">1文字ヒント</button>
+        <button class="yellow small-btn" id="hintLengthBtn" aria-label="文字数ヒント">文字数ヒント</button>
+        <button class="secondary small-btn" id="soundBtn" aria-label="発音">発音</button>
       </div>
 
       <div class="button-row" style="margin-top:12px;">
-        <button class="secondary" id="undoBtn">1つもどす</button>
-        <button class="danger" id="resetBtn">やりなおし</button>
-        <button class="primary" id="nextBtn">つぎの問題</button>
+        <button class="secondary" id="undoBtn" aria-label="1つもどす">1つもどす</button>
+        <button class="danger" id="resetBtn" aria-label="やりなおし">やりなおし</button>
+        <button class="primary" id="nextBtn" aria-label="つぎの問題" disabled>つぎの問題</button>
       </div>
 
       <div class="message" id="message"></div>
     </section>
 
     <section class="card">
-      <h2 style="text-align:center;margin-top:0;color:#ff6fa3;">ごほうびスタンプ図鑑</h2>
-      <p style="text-align:center;font-weight:800;">10問クリアで、かわいいオリジナルキャラをGET！</p>
+      <h2 class="section-title">ごほうびスタンプ図鑑</h2>
+      <p class="section-subtitle">10問クリアで、かわいいオリジナルキャラをGET！</p>
       <div class="stamp-grid" id="stampGrid"></div>
     </section>
 
@@ -387,11 +410,11 @@
 
   <div class="reward-modal" id="rewardModal">
     <div class="reward-card">
-      <h2 style="margin:0;color:#ff6fa3;">スタンプGET！</h2>
+      <h2 class="section-title" style="margin:0;">スタンプGET！</h2>
       <div class="reward-emoji" id="rewardEmoji">🐶🔥</div>
       <h3 id="rewardName">ほのおワン</h3>
       <p id="rewardType">どうぶつモンスター</p>
-      <button class="primary" id="closeRewardBtn">やったー！</button>
+      <button class="primary" id="closeRewardBtn" aria-label="やったー">やったー！</button>
     </div>
   </div>
 
@@ -406,7 +429,7 @@
           { word: "cat", jp: "ねこ", emoji: "🐱" },
           { word: "sun", jp: "たいよう", emoji: "☀️" },
           { word: "bus", jp: "バス", emoji: "🚌" },
-          { word: "egg", jp: "たまご", emoji: "🥚" },
+          { word: "egg", jp: "たまご", emoji: "���" },
           { word: "pen", jp: "ペン", emoji: "🖊️" },
           { word: "fox", jp: "きつね", emoji: "🦊" },
           { word: "pig", jp: "ぶた", emoji: "🐷" },
@@ -473,6 +496,7 @@
     ];
 
     const STORAGE_KEY = "englishWordMonsterSave_v1";
+    const SAVE_DEBOUNCE_MS = 500;
 
     let state = {
       level: "level1",
@@ -487,6 +511,9 @@
       hintCount: 0,
       isAnswered: false
     };
+
+    let saveTimeout = null;
+    let isSpeaking = false;
 
     const el = {
       levelButtons: document.getElementById("levelButtons"),
@@ -529,14 +556,21 @@
     }
 
     function saveData() {
-      const data = {
-        level: state.level,
-        streak: state.streak,
-        clearCount: state.clearCount,
-        collectedStamps: state.collectedStamps,
-        solvedWords: state.solvedWords
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      clearTimeout(saveTimeout);
+      saveTimeout = setTimeout(() => {
+        const data = {
+          level: state.level,
+          streak: state.streak,
+          clearCount: state.clearCount,
+          collectedStamps: state.collectedStamps,
+          solvedWords: state.solvedWords
+        };
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+          console.warn("Failed to save data.", e);
+        }
+      }, SAVE_DEBOUNCE_MS);
     }
 
     function shuffle(array) {
@@ -549,15 +583,19 @@
     }
 
     function speak(text) {
+      if (isSpeaking) return;
       if (!("speechSynthesis" in window)) {
         showMessage("このブラウザでは発音が使えないかも", "bad");
         return;
       }
+      isSpeaking = true;
       window.speechSynthesis.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "en-US";
       utter.rate = 0.75;
       utter.pitch = 1.2;
+      utter.onend = () => { isSpeaking = false; };
+      utter.onerror = () => { isSpeaking = false; };
       window.speechSynthesis.speak(utter);
     }
 
@@ -567,6 +605,7 @@
         const btn = document.createElement("button");
         btn.className = "level-btn" + (state.level === levelKey ? " active" : "");
         btn.textContent = WORDS[levelKey].label;
+        btn.setAttribute("aria-label", WORDS[levelKey].label);
         btn.addEventListener("click", () => {
           state.level = levelKey;
           saveData();
@@ -579,11 +618,13 @@
 
     function chooseWord() {
       const list = WORDS[state.level].words;
+      if (!list || list.length === 0) return null;
       return list[Math.floor(Math.random() * list.length)];
     }
 
     function newQuestion() {
       const wordObj = chooseWord();
+      if (!wordObj) return;
       const letters = shuffle(wordObj.word.toLowerCase().split(""));
       state.current = wordObj;
       state.letters = letters;
@@ -593,6 +634,7 @@
       state.isAnswered = false;
       el.hintBox.textContent = "ヒントボタンをおすと、少しだけ教えてくれるよ";
       showMessage("", "");
+      el.nextBtn.disabled = true;
       renderAll();
     }
 
@@ -602,7 +644,6 @@
       renderLetters();
       renderStatus();
       renderStamps();
-      renderWordList();
     }
 
     function renderQuestion() {
@@ -612,6 +653,7 @@
 
     function renderSlots() {
       el.answerSlots.innerHTML = "";
+      if (!state.current) return;
       const length = state.current.word.length;
       for (let i = 0; i < length; i++) {
         const slot = document.createElement("div");
@@ -624,10 +666,10 @@
     function renderLetters() {
       el.letterBank.innerHTML = "";
       state.letters.forEach((letter, index) => {
-        const btn = document.createElement("div");
-        btn.className = "letter" + (state.usedIndexes.includes(index) ? " used" : "");
+        const btn = document.createElement("button");
+        btn.className = "letter";
         btn.textContent = letter;
-        btn.setAttribute("role", "button");
+        btn.disabled = state.usedIndexes.includes(index);
         btn.setAttribute("aria-label", letter);
         btn.addEventListener("click", () => chooseLetter(index));
         el.letterBank.appendChild(btn);
@@ -655,19 +697,6 @@
       });
     }
 
-    function renderWordList() {
-      let html = "";
-      Object.keys(WORDS).forEach(levelKey => {
-        html += `<h3 style="color:#ff6fa3;">${WORDS[levelKey].label}</h3><div class="word-list">`;
-        WORDS[levelKey].words.forEach(item => {
-          const solved = state.solvedWords[item.word] ? "✅" : "";
-          html += `<div class="word-item">${item.emoji} ${item.word} ${solved}<br><small>${item.jp}</small></div>`;
-        });
-        html += "</div>";
-      });
-      el.wordList.innerHTML = html;
-    }
-
     function chooseLetter(index) {
       if (state.isAnswered) return;
       if (state.usedIndexes.includes(index)) return;
@@ -684,6 +713,7 @@
     }
 
     function checkAnswer() {
+      if (!state.current) return;
       const answerText = state.answer.join("").toLowerCase();
       const correctText = state.current.word.toLowerCase();
 
@@ -692,10 +722,10 @@
         state.streak += 1;
         state.clearCount += 1;
         state.solvedWords[correctText] = true;
-        saveData();
         showMessage(getStarMessage(), "good");
         speak(correctText);
         makeConfetti();
+        el.nextBtn.disabled = false;
 
         if (state.clearCount >= 10) {
           state.clearCount = 0;
@@ -705,4 +735,116 @@
         renderAll();
       } else {
         state.streak = 0;
-        s
+        showMessage("もう一度チャレンジしてみよう！", "bad");
+        saveData();
+      }
+    }
+
+    function showMessage(text, type) {
+      el.message.textContent = text;
+      el.message.className = type ? "message " + type : "message";
+    }
+
+    function getStarMessage() {
+      const messages = [
+        "すばらしい！🌟",
+        "グレート！⭐",
+        "ナイス！✨",
+        "パーフェクト！💯",
+        "イエーイ！🎉"
+      ];
+      return messages[Math.floor(Math.random() * messages.length)];
+    }
+
+    function makeConfetti() {
+      for (let i = 0; i < 20; i++) {
+        setTimeout(() => {
+          const confetti = document.createElement("div");
+          confetti.className = "confetti";
+          confetti.style.left = Math.random() * 100 + "%";
+          confetti.style.backgroundColor = ["#ff8fb3", "#7bdff2", "#ffd166", "#4caf50"][Math.floor(Math.random() * 4)];
+          document.body.appendChild(confetti);
+          setTimeout(() => confetti.remove(), 1800);
+        }, i * 30);
+      }
+    }
+
+    function giveReward() {
+      const unlockedStamps = STAMPS.filter(s => !state.collectedStamps.includes(s.id));
+      if (unlockedStamps.length === 0) {
+        showMessage("全部のスタンプをGETしました！おめでとう！", "good");
+        return;
+      }
+      const stamp = unlockedStamps[Math.floor(Math.random() * unlockedStamps.length)];
+      state.collectedStamps.push(stamp.id);
+      el.rewardEmoji.textContent = stamp.emoji;
+      el.rewardName.textContent = stamp.name;
+      el.rewardType.textContent = stamp.type;
+      el.rewardModal.classList.add("show");
+      saveData();
+    }
+
+    function undo() {
+      if (state.isAnswered || state.answer.length === 0) return;
+      state.usedIndexes.pop();
+      state.answer.pop();
+      renderSlots();
+      renderLetters();
+      showMessage("", "");
+    }
+
+    function reset() {
+      state.answer = [];
+      state.usedIndexes = [];
+      state.hintCount = 0;
+      state.isAnswered = false;
+      el.hintBox.textContent = "ヒントボタンをおすと、少しだけ教えてくれるよ";
+      showMessage("", "");
+      renderSlots();
+      renderLetters();
+    }
+
+    function showHintFirst() {
+      if (!state.current || state.isAnswered) return;
+      state.hintCount += 1;
+      const word = state.current.word;
+      el.hintBox.textContent = `最初の文字は「${word[0].toUpperCase()}」です`;
+    }
+
+    function showHintLength() {
+      if (!state.current || state.isAnswered) return;
+      state.hintCount += 1;
+      const word = state.current.word;
+      el.hintBox.textContent = `全部で${word.length}文字です`;
+    }
+
+    function closeRewardModal() {
+      el.rewardModal.classList.remove("show");
+      newQuestion();
+    }
+
+    // Event Listeners
+    el.hintFirstBtn.addEventListener("click", showHintFirst);
+    el.hintLengthBtn.addEventListener("click", showHintLength);
+    el.soundBtn.addEventListener("click", () => {
+      if (state.current) speak(state.current.word);
+    });
+    el.undoBtn.addEventListener("click", undo);
+    el.resetBtn.addEventListener("click", reset);
+    el.nextBtn.addEventListener("click", newQuestion);
+    el.closeRewardBtn.addEventListener("click", closeRewardModal);
+
+    // Close modal on backdrop click
+    el.rewardModal.addEventListener("click", (e) => {
+      if (e.target === el.rewardModal) {
+        closeRewardModal();
+      }
+    });
+
+    // Initialize
+    loadSave();
+    buildLevelButtons();
+    newQuestion();
+  </script>
+</body>
+</html>
