@@ -1,100 +1,708 @@
-﻿<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lift Log 家族トレーニングメモ</title>
-    <style>
-:root {
-  --bg: #f6f7f4;
-  --surface: #ffffff;
-  --surface-2: #eef2ef;
-  --ink: #17211d;
-  --muted: #68756f;
-  --line: #dbe1dc;
-  --accent: #16735f;
-  --accent-2: #d94f30;
-  --accent-3: #2f6fb4;
-  --shadow: 0 18px 45px rgba(24, 38, 32, 0.1);
-}
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>えいごワード モンスター</title>
+  <style>
+    :root {
+      --bg1: #fff7d6;
+      --bg2: #dff7ff;
+      --main: #ff8fb3;
+      --sub: #7bdff2;
+      --accent: #ffd166;
+      --text: #333;
+      --card: #ffffff;
+      --good: #4caf50;
+      --bad: #ff6b6b;
+      --shadow: 0 10px 25px rgba(0,0,0,0.12);
+    }
 
-body[data-theme="dark"] {
-  --bg: #111815;
-  --surface: #1b2521;
-  --surface-2: #26332e;
-  --ink: #edf6f1;
-  --muted: #a7b8af;
-  --line: #33423c;
-  --shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
-}
+    * { box-sizing: border-box; }
 
-* {
-  box-sizing: border-box;
-}
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      padding: 16px;
+    }
 
-body {
-  margin: 0;
-  min-height: 100vh;
-  color: var(--ink);
-  background: var(--bg);
-  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-  letter-spacing: 0;
-}
+    .app {
+      max-width: 760px;
+      margin: 0 auto;
+    }
 
-button,
-input,
-select,
-textarea {
-  font: inherit;
-}
+    header {
+      text-align: center;
+      padding: 10px 0 16px;
+    }
 
-button {
-  cursor: pointer;
-}
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 7vw, 46px);
+      color: #ff6fa3;
+      text-shadow: 2px 2px 0 #fff;
+    }
 
-.app-shell {
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  min-height: 100vh;
-}
+    .subtitle {
+      margin-top: 6px;
+      font-weight: 700;
+      color: #4a90a4;
+    }
 
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding: 24px;
-  background: #17211d;
-  color: #f7fbf8;
-}
+    .card {
+      background: rgba(255,255,255,0.92);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 16px;
+      border: 4px solid rgba(255,255,255,0.7);
+    }
 
-body[data-theme="dark"] .sidebar {
-  background: #0c1210;
-}
+    .top-row,
+    .status-row,
+    .button-row,
+    .hint-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+    }
 
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+    .level-btn,
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 16px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 5px 0 rgba(0,0,0,0.15);
+      transition: transform .08s, box-shadow .08s, opacity .2s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  background: #35a37c;
-  color: #ffffff;
-  font-weight: 800;
-}
+    button:active,
+    .level-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.15);
+    }
 
-.brand h1,
-.brand p,
-.section-head h2,
-.section-head h3,
-.panel h3 {
-  margin: 0;
-}
+    .level-btn {
+      background: #fff;
+      color: #4a90a4;
+      border: 3px solid #b8effa;
+    }
 
-.brand h1 {
-  font-size: 22px;
+    .level-btn.active {
+      background: #7bdff2;
+      color: #fff;
+      border-color: #7bdff2;
+    }
+
+    .primary { background: var(--main); color: #fff; }
+    .secondary { background: var(--sub); color: #fff; }
+    .yellow { background: var(--accent); color: #6b4b00; }
+    .danger { background: #ff8b8b; color: #fff; }
+    .small-btn { font-size: 14px; padding: 10px 13px; }
+
+    .status-row {
+      justify-content: space-around;
+      margin-top: 12px;
+      font-weight: 900;
+    }
+
+    .badge {
+      background: #fff7cc;
+      border: 3px solid #ffe37a;
+      border-radius: 18px;
+      padding: 8px 12px;
+      min-width: 110px;
+      text-align: center;
+    }
+
+    .question-area {
+      text-align: center;
+    }
+
+    .emoji {
+      font-size: clamp(78px, 24vw, 140px);
+      line-height: 1;
+      margin: 8px 0;
+      animation: float 2s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .jp-name {
+      font-size: 24px;
+      font-weight: 900;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .hint-box {
+      min-height: 42px;
+      background: #f3fbff;
+      border: 3px dashed #9de7f5;
+      border-radius: 20px;
+      padding: 10px;
+      font-weight: 900;
+      color: #3d8da0;
+      margin: 10px 0;
+    }
+
+    .answer-slots,
+    .letter-bank {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 14px 0;
+      min-height: 62px;
+    }
+
+    .slot,
+    .letter {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 27px;
+      font-weight: 900;
+    }
+
+    .slot {
+      background: #fff;
+      border: 3px dashed #ffb3cc;
+      color: #ff6fa3;
+    }
+
+    .letter {
+      background: #fff;
+      border: 3px solid #ffd166;
+      color: #333;
+      box-shadow: 0 5px 0 #e5b84d;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .letter.used {
+      opacity: .25;
+      pointer-events: none;
+      transform: scale(.92);
+    }
+
+    .message {
+      min-height: 32px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 900;
+      margin-top: 8px;
+    }
+
+    .message.good { color: var(--good); }
+    .message.bad { color: var(--bad); }
+
+    .stamp-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 12px;
+    }
+
+    .stamp {
+      background: #fff;
+      border-radius: 22px;
+      padding: 12px 8px;
+      text-align: center;
+      border: 3px solid #eee;
+      min-height: 118px;
+    }
+
+    .stamp.locked {
+      filter: grayscale(1);
+      opacity: .45;
+    }
+
+    .stamp-emoji {
+      font-size: 44px;
+      line-height: 1.1;
+    }
+
+    .stamp-name {
+      margin-top: 5px;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .stamp-type {
+      font-size: 12px;
+      color: #777;
+      font-weight: 700;
+    }
+
+    .reward-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 10;
+    }
+
+    .reward-modal.show { display: flex; }
+
+    .reward-card {
+      max-width: 360px;
+      width: 100%;
+      background: #fff;
+      border-radius: 32px;
+      text-align: center;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.25);
+      animation: pop .35s ease-out;
+    }
+
+    @keyframes pop {
+      from { transform: scale(.75); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .reward-emoji {
+      font-size: 96px;
+      margin: 8px 0;
+    }
+
+    .confetti {
+      position: fixed;
+      top: -20px;
+      width: 12px;
+      height: 18px;
+      border-radius: 3px;
+      animation: fall 1.8s linear forwards;
+      z-index: 20;
+    }
+
+    @keyframes fall {
+      to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+    }
+
+    details summary {
+      cursor: pointer;
+      font-weight: 900;
+      color: #4a90a4;
+      padding: 8px;
+    }
+
+    .word-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+      font-weight: 700;
+    }
+
+    .word-item {
+      background: #f7fdff;
+      border-radius: 12px;
+      padding: 8px;
+      border: 2px solid #d7f5fb;
+    }
+
+    @media (max-width: 420px) {
+      .slot, .letter {
+        width: 46px;
+        height: 46px;
+        font-size: 23px;
+      }
+      .card { padding: 14px; border-radius: 24px; }
+      button, .level-btn { font-size: 14px; padding: 10px 12px; }
+      .badge { min-width: 92px; font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>えいごワード モンスター</h1>
+      <div class="subtitle">ならべかえて英単語を完成させよう！</div>
+    </header>
+
+    <section class="card">
+      <div class="top-row" id="levelButtons"></div>
+      <div class="status-row">
+        <div class="badge">れんぞく<br><span id="streak">0</span>問</div>
+        <div class="badge">10問まで<br><span id="clearCount">0</span>/10</div>
+        <div class="badge">スタンプ<br><span id="stampCount">0</span>こ</div>
+      </div>
+    </section>
+
+    <section class="card question-area">
+      <div class="emoji" id="emoji">🐶</div>
+      <div class="jp-name" id="jpName">いぬ</div>
+      <div class="hint-box" id="hintBox">ヒントボタンをおすと、少しだけ教えてくれるよ</div>
+
+      <div class="answer-slots" id="answerSlots"></div>
+      <div class="letter-bank" id="letterBank"></div>
+
+      <div class="hint-row">
+        <button class="yellow small-btn" id="hintFirstBtn">1文字ヒント</button>
+        <button class="yellow small-btn" id="hintLengthBtn">文字数ヒント</button>
+        <button class="secondary small-btn" id="soundBtn">発音</button>
+      </div>
+
+      <div class="button-row" style="margin-top:12px;">
+        <button class="secondary" id="undoBtn">1つもどす</button>
+        <button class="danger" id="resetBtn">やりなおし</button>
+        <button class="primary" id="nextBtn">つぎの問題</button>
+      </div>
+
+      <div class="message" id="message"></div>
+    </section>
+
+    <section class="card">
+      <h2 style="text-align:center;margin-top:0;color:#ff6fa3;">ごほうびスタンプ図鑑</h2>
+      <p style="text-align:center;font-weight:800;">10問クリアで、かわいいオリジナルキャラをGET！</p>
+      <div class="stamp-grid" id="stampGrid"></div>
+    </section>
+
+    <section class="card">
+      <details>
+        <summary>レベル別の単語を見る</summary>
+        <div id="wordList"></div>
+      </details>
+    </section>
+  </div>
+
+  <div class="reward-modal" id="rewardModal">
+    <div class="reward-card">
+      <h2 style="margin:0;color:#ff6fa3;">スタンプGET！</h2>
+      <div class="reward-emoji" id="rewardEmoji">🐶🔥</div>
+      <h3 id="rewardName">ほのおワン</h3>
+      <p id="rewardType">どうぶつモンスター</p>
+      <button class="primary" id="closeRewardBtn">やったー！</button>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const WORDS = {
+      level1: {
+        label: "Lv1 かんたん",
+        words: [
+          { word: "dog", jp: "いぬ", emoji: "🐶" },
+          { word: "cat", jp: "ねこ", emoji: "🐱" },
+          { word: "sun", jp: "たいよう", emoji: "☀️" },
+          { word: "bus", jp: "バス", emoji: "🚌" },
+          { word: "egg", jp: "たまご", emoji: "🥚" },
+          { word: "pen", jp: "ペン", emoji: "🖊️" },
+          { word: "fox", jp: "きつね", emoji: "🦊" },
+          { word: "pig", jp: "ぶた", emoji: "🐷" },
+          { word: "cow", jp: "うし", emoji: "🐮" },
+          { word: "car", jp: "くるま", emoji: "🚗" }
+        ]
+      },
+      level2: {
+        label: "Lv2 きほん",
+        words: [
+          { word: "apple", jp: "りんご", emoji: "🍎" },
+          { word: "tiger", jp: "トラ", emoji: "🐯" },
+          { word: "train", jp: "でんしゃ", emoji: "🚃" },
+          { word: "milk", jp: "ミルク", emoji: "🥛" },
+          { word: "happy", jp: "うれしい", emoji: "😊" },
+          { word: "water", jp: "みず", emoji: "💧" },
+          { word: "green", jp: "みどり", emoji: "🟢" },
+          { word: "house", jp: "いえ", emoji: "🏠" },
+          { word: "bread", jp: "パン", emoji: "🍞" },
+          { word: "chair", jp: "いす", emoji: "🪑" }
+        ]
+      },
+      level3: {
+        label: "Lv3 チャレンジ",
+        words: [
+          { word: "elephant", jp: "ぞう", emoji: "🐘" },
+          { word: "library", jp: "としょかん", emoji: "📚" },
+          { word: "soccer", jp: "サッカー", emoji: "⚽" },
+          { word: "beautiful", jp: "うつくしい", emoji: "🌸" },
+          { word: "teacher", jp: "先生", emoji: "👩‍🏫" },
+          { word: "morning", jp: "あさ", emoji: "🌅" },
+          { word: "kitchen", jp: "キッチン", emoji: "🍳" },
+          { word: "holiday", jp: "休日", emoji: "🎈" },
+          { word: "penguin", jp: "ペンギン", emoji: "🐧" },
+          { word: "monster", jp: "モンスター", emoji: "👾" }
+        ]
+      },
+      level4: {
+        label: "Lv4 すごい",
+        words: [
+          { word: "mountain", jp: "山", emoji: "⛰️" },
+          { word: "adventure", jp: "ぼうけん", emoji: "🗺️" },
+          { word: "science", jp: "かがく", emoji: "🔬" },
+          { word: "rainbow", jp: "にじ", emoji: "🌈" },
+          { word: "vegetable", jp: "やさい", emoji: "🥦" },
+          { word: "dinosaur", jp: "きょうりゅう", emoji: "🦖" },
+          { word: "computer", jp: "コンピューター", emoji: "💻" },
+          { word: "birthday", jp: "たんじょうび", emoji: "🎂" },
+          { word: "friendly", jp: "やさしい", emoji: "🤝" },
+          { word: "treasure", jp: "たからもの", emoji: "💎" }
+        ]
+      }
+    };
+
+    const STAMPS = [
+      { id: "fireDog", name: "ほのおワン", type: "げんきタイプ", emoji: "🐶🔥" },
+      { id: "sparkCat", name: "ピカにゃん", type: "でんきタイプ", emoji: "🐱⚡" },
+      { id: "icePenguin", name: "こおりペン", type: "こおりタイプ", emoji: "🐧❄️" },
+      { id: "leafFox", name: "はっぱコン", type: "もりタイプ", emoji: "🦊🍃" },
+      { id: "starBear", name: "きらくま", type: "ほしタイプ", emoji: "🐻⭐" },
+      { id: "rainbowRabbit", name: "にじぴょん", type: "にじタイプ", emoji: "🐰🌈" },
+      { id: "waterDolphin", name: "ぷかイル", type: "みずタイプ", emoji: "🐬💧" },
+      { id: "moonOwl", name: "つきフクロウ", type: "よるタイプ", emoji: "🦉🌙" }
+    ];
+
+    const STORAGE_KEY = "englishWordMonsterSave_v1";
+
+    let state = {
+      level: "level1",
+      current: null,
+      letters: [],
+      answer: [],
+      usedIndexes: [],
+      streak: 0,
+      clearCount: 0,
+      collectedStamps: [],
+      solvedWords: {},
+      hintCount: 0,
+      isAnswered: false
+    };
+
+    const el = {
+      levelButtons: document.getElementById("levelButtons"),
+      streak: document.getElementById("streak"),
+      clearCount: document.getElementById("clearCount"),
+      stampCount: document.getElementById("stampCount"),
+      emoji: document.getElementById("emoji"),
+      jpName: document.getElementById("jpName"),
+      hintBox: document.getElementById("hintBox"),
+      answerSlots: document.getElementById("answerSlots"),
+      letterBank: document.getElementById("letterBank"),
+      message: document.getElementById("message"),
+      stampGrid: document.getElementById("stampGrid"),
+      rewardModal: document.getElementById("rewardModal"),
+      rewardEmoji: document.getElementById("rewardEmoji"),
+      rewardName: document.getElementById("rewardName"),
+      rewardType: document.getElementById("rewardType"),
+      wordList: document.getElementById("wordList"),
+      hintFirstBtn: document.getElementById("hintFirstBtn"),
+      hintLengthBtn: document.getElementById("hintLengthBtn"),
+      soundBtn: document.getElementById("soundBtn"),
+      undoBtn: document.getElementById("undoBtn"),
+      resetBtn: document.getElementById("resetBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      closeRewardBtn: document.getElementById("closeRewardBtn")
+    };
+
+    function loadSave() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved) return;
+        state.level = saved.level || state.level;
+        state.streak = Number(saved.streak || 0);
+        state.clearCount = Number(saved.clearCount || 0);
+        state.collectedStamps = Array.isArray(saved.collectedStamps) ? saved.collectedStamps : [];
+        state.solvedWords = saved.solvedWords && typeof saved.solvedWords === "object" ? saved.solvedWords : {};
+      } catch (e) {
+        console.warn("Save data could not be loaded.", e);
+      }
+    }
+
+    function saveData() {
+      const data = {
+        level: state.level,
+        streak: state.streak,
+        clearCount: state.clearCount,
+        collectedStamps: state.collectedStamps,
+        solvedWords: state.solvedWords
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function shuffle(array) {
+      const copy = array.slice();
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function speak(text) {
+      if (!("speechSynthesis" in window)) {
+        showMessage("このブラウザでは発音が使えないかも", "bad");
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "en-US";
+      utter.rate = 0.75;
+      utter.pitch = 1.2;
+      window.speechSynthesis.speak(utter);
+    }
+
+    function buildLevelButtons() {
+      el.levelButtons.innerHTML = "";
+      Object.keys(WORDS).forEach(levelKey => {
+        const btn = document.createElement("button");
+        btn.className = "level-btn" + (state.level === levelKey ? " active" : "");
+        btn.textContent = WORDS[levelKey].label;
+        btn.addEventListener("click", () => {
+          state.level = levelKey;
+          saveData();
+          newQuestion();
+          buildLevelButtons();
+        });
+        el.levelButtons.appendChild(btn);
+      });
+    }
+
+    function chooseWord() {
+      const list = WORDS[state.level].words;
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function newQuestion() {
+      const wordObj = chooseWord();
+      const letters = shuffle(wordObj.word.toLowerCase().split(""));
+      state.current = wordObj;
+      state.letters = letters;
+      state.answer = [];
+      state.usedIndexes = [];
+      state.hintCount = 0;
+      state.isAnswered = false;
+      el.hintBox.textContent = "ヒントボタンをおすと、少しだけ教えてくれるよ";
+      showMessage("", "");
+      renderAll();
+    }
+
+    function renderAll() {
+      renderQuestion();
+      renderSlots();
+      renderLetters();
+      renderStatus();
+      renderStamps();
+      renderWordList();
+    }
+
+    function renderQuestion() {
+      el.emoji.textContent = state.current ? state.current.emoji : "🐶";
+      el.jpName.textContent = state.current ? state.current.jp : "いぬ";
+    }
+
+    function renderSlots() {
+      el.answerSlots.innerHTML = "";
+      const length = state.current.word.length;
+      for (let i = 0; i < length; i++) {
+        const slot = document.createElement("div");
+        slot.className = "slot";
+        slot.textContent = state.answer[i] ? state.answer[i].toUpperCase() : "";
+        el.answerSlots.appendChild(slot);
+      }
+    }
+
+    function renderLetters() {
+      el.letterBank.innerHTML = "";
+      state.letters.forEach((letter, index) => {
+        const btn = document.createElement("div");
+        btn.className = "letter" + (state.usedIndexes.includes(index) ? " used" : "");
+        btn.textContent = letter;
+        btn.setAttribute("role", "button");
+        btn.setAttribute("aria-label", letter);
+        btn.addEventListener("click", () => chooseLetter(index));
+        el.letterBank.appendChild(btn);
+      });
+    }
+
+    function renderStatus() {
+      el.streak.textContent = state.streak;
+      el.clearCount.textContent = state.clearCount;
+      el.stampCount.textContent = state.collectedStamps.length;
+    }
+
+    function renderStamps() {
+      el.stampGrid.innerHTML = "";
+      STAMPS.forEach(stamp => {
+        const hasStamp = state.collectedStamps.includes(stamp.id);
+        const div = document.createElement("div");
+        div.className = "stamp" + (hasStamp ? "" : " locked");
+        div.innerHTML = `
+          <div class="stamp-emoji">${hasStamp ? stamp.emoji : "❔"}</div>
+          <div class="stamp-name">${hasStamp ? stamp.name : "？？？"}</div>
+          <div class="stamp-type">${hasStamp ? stamp.type : "10問クリアでGET"}</div>
+        `;
+        el.stampGrid.appendChild(div);
+      });
+    }
+
+    function renderWordList() {
+      let html = "";
+      Object.keys(WORDS).forEach(levelKey => {
+        html += `<h3 style="color:#ff6fa3;">${WORDS[levelKey].label}</h3><div class="word-list">`;
+        WORDS[levelKey].words.forEach(item => {
+          const solved = state.solvedWords[item.word] ? "✅" : "";
+          html += `<div class="word-item">${item.emoji} ${item.word} ${solved}<br><small>${item.jp}</small></div>`;
+        });
+        html += "</div>";
+      });
+      el.wordList.innerHTML = html;
+    }
+
+    function chooseLetter(index) {
+      if (state.isAnswered) return;
+      if (state.usedIndexes.includes(index)) return;
+      if (state.answer.length >= state.current.word.length) return;
+
+      state.usedIndexes.push(index);
+      state.answer.push(state.letters[index]);
+      renderSlots();
+      renderLetters();
+
+      if (state.answer.length === state.current.word.length) {
+        checkAnswer();
+      }
+    }
+
+    function checkAnswer() {
+      const answerText = state.answer.join("").toLowerCase();
+      const correctText = state.current.word.toLowerCase();
+
+      if (answerText === correctText) {
+        state.isAnswered = true;
+        state.streak += 1;
+        state.clearCount += 1;
+        state.solvedWords[correctText] = true;
+        saveData();
+        showMessage(getStarMessage(), "good");
+        speak(correctText);
+        makeConfetti();
+
+        if (state.clearCount >= 10) {
+          state.clearCount = 0;
+          giveReward();
+        }
+        saveData();
+        renderAll();
+      } else {
+        state.streak = 0;
+        s
